@@ -22,6 +22,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.py" />
+    <Compile Include="src\BinPack.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="src\BRKGA.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="src\DataProcess.py">
       <SubType>Code</SubType>
     </Compile>
@@ -31,7 +37,7 @@
     <Folder Include="src\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="instances\class7_n20_1.csv" />
+    <Content Include="instances\class7_small.txt" />
     <Content Include="instances\class7_n20_1.txt" />
     <Content Include="src\config.txt" />
   </ItemGroup>

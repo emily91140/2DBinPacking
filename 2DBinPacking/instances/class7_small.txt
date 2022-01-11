@@ -1,0 +1,9 @@
+    7        PROBLEM CLASS
+    5        N. OF ITEMS
+    1  301   RELATIVE AND ABSOLUTE N. OF INSTANCE
+  100  100   HBIN,WBIN
+   75   56   H(I),W(I),I=1,...,N
+   27   98
+   24   74
+   34   99
+    1   80

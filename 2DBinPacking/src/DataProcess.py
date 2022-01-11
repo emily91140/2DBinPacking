@@ -1,4 +1,7 @@
 
+
+from src.BinPack import *
+
 class DataProcess():
     def __init__(self, config_path):
         self.config = self.LoadConfig(config_path)
@@ -38,8 +41,9 @@ class DataProcess():
                     # 開頭4列
                     instanceDict[titleDict[line_no]] = tmp
                 else:
-                    # job 列表
-                    item_dict[item_no] = tmp
+                    # job 列表 存入item物件
+                    item = Item(tmp[0], tmp[1])
+                    item_dict[item_no] = item
                     item_no += 1
                 
                 # 更新line_no
