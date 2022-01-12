@@ -2,4 +2,5 @@
 
 ### FILE PATH
 #instance_filename = "class7_n20_1.txt"
-instance_filename = "class7_small.txt"
+#instance_filename = "class7_small.txt"
+instance_filename = "class7_onebin.txt"

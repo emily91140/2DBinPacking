@@ -37,6 +37,7 @@
     <Folder Include="src\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="instances\class7_onebin.txt" />
     <Content Include="instances\class7_small.txt" />
     <Content Include="instances\class7_n20_1.txt" />
     <Content Include="src\config.txt" />

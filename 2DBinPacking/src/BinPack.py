@@ -11,6 +11,7 @@ class Job():
         self.y1 = None # bottom left corner y
         self.x2 = None # upper right corner x
         self.y2 = None # upper right corner y
+        self.batch_no = None # assigned to which batch_no
 
     def __repr__(self):
         repr_str = ""
@@ -70,6 +71,7 @@ class Job():
         self.orientation = orientation
         self.x1, self.y1 = choosed_ems.x1, choosed_ems.y1
         self.x2, self.y2 = choosed_ems.x1 + tmp_w, choosed_ems.y1 + tmp_h
+        self.batch_no = choosed_ems.batch_no
         print("更新 job_id : {} 內建資訊".format(self.no))
         return solution, self
 
@@ -92,8 +94,10 @@ class EMS():
         # incrementing the class variable by 1
         # whenever new object is created
         EMS.counter += 1
+    def __repr__(self):
+        repr_str = "[({}, {}), ({}, {})]".format(self.x1, self.y1, self.x2, self.y2)
+        return repr_str
 
-#################################################################
 def getEMSById(B_EMSs, search_ems_id):
     for b_no, EMSs in B_EMSs.items():
         for ems in EMSs:
@@ -214,7 +218,7 @@ def BFF_Heuristic(jobNo_sequence, data):
     # Initialize
     jobNo_sequence_list = jobNo_sequence.copy()
     B_EMSs = {}     # open batches records remain EMSs by list {batch_no : [ems1, ems2, ...]}
-    solution = []   # [job_no, batch_no, x1, y1, x2, y2]
+    solution = []   # solution : [job_no, batch_no, orientation, x1, y1, x2, y2]
 
     ## 初始化第一包的ems
     batch_no = 0
@@ -234,7 +238,7 @@ def BFF_Heuristic(jobNo_sequence, data):
             results = [] # 儲存當下batch的所有結果
             for ems in EMSs:
                 res = job.is_accommodated(ems)
-                results.extend(res) # 記錄當下batch之每個ems的擺放結果
+                results.append(res) # 記錄當下batch之每個ems的擺放結果
             
             BatchNo_results[b_no] = results.copy()
             results.clear()
@@ -242,7 +246,12 @@ def BFF_Heuristic(jobNo_sequence, data):
         # check whether can put job in exisiting Bin(Batch)
         # if not, create a new bin
         final_placement = []
-        true_result = [res for res in results for b_no, results in BatchNo_results.items() if res[0] == True]
+        true_result = []
+        for b_no, results in BatchNo_results.items():
+            for res in results:
+                if res[0]:
+                    true_result.append(res)
+        #true_result = [res for res in results for b_no, results in BatchNo_results.items() if res[0] == True]
         if len(true_result) != 0:
             # 若有多個可放置的ems 選擇 min_value最小者
             true_result = sorted(true_result, key = lambda s: s[2])
