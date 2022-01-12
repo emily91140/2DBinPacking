@@ -18,20 +18,26 @@ if __name__ == "__main__":
     print("job sequence(sorted by area large to small): ", job_sequence)
 
     ## Step2 Apply BFF with ordered Job Sequence
-    # solution : [job_no, batch_no, orientation, x1, y1, x2, y2]
-    solution, B_EMSs, data = BFF_Heuristic(job_sequence, data)
+    # solution = [job_no, batch_no, orientation, x1, y1, x2, y2]
+    # B_EMSs = { batch_no : ems_object}
+    # jobResults = { job_no : job_object (filled information with coordinate) }
+    
+    solution, B_EMSs, jobResults, max_opened_batch_no = BFF_Heuristic(job_sequence, data)
+    fitness = evaluate_fitnesses(data.job_total_area, max_opened_batch_no, data.BIN_AREA)
+    print("fitness : 剩餘空間為 {} , 共使用 {} 個bin".format(fitness[0], fitness[1]))
+
+
+    ## draw rectangle
+    #im = Image.new('RGB', (data.WBIN, data.HBIN), (128, 128, 128))
+    #draw = ImageDraw.Draw(im)
+    #for job_sol in solution:
+    #    if job_sol[1] == 0:
+    #        print("draw job {}".format(job_sol[0]))
+    #        draw.rectangle((job_sol[3], data.HBIN - job_sol[4], job_sol[5], data.HBIN - job_sol[6]), fill=(0, 192, 192), outline=(255, 255, 255))
+    #im.show()
+    #im.save('pillow_imagedraw.jpg', quality=95)
     print()
 
-    # draw rectangle
-    im = Image.new('RGB', (200, 400), (128, 128, 128))
-    draw = ImageDraw.Draw(im)
-    for job_sol in solution:
-        if job_sol[1] == 0:
-            print("draw job {}".format(job_sol[0]))
-            draw.rectangle((job_sol[3], 400-job_sol[4], job_sol[5], 400-job_sol[6]), fill=(0, 192, 192), outline=(255, 255, 255))
-    im.show()
-    im.save('pillow_imagedraw.jpg', quality=95)
-    
     # METHOD 2 : BRKGA
 
     # End Program

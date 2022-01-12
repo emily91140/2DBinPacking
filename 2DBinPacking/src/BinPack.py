@@ -1,5 +1,5 @@
 
-
+import copy
 
 class Job():
     def __init__(self, no, width = 0, height = 0):
@@ -14,12 +14,7 @@ class Job():
         self.batch_no = None # assigned to which batch_no
 
     def __repr__(self):
-        repr_str = ""
-        repr_str += "["
-        repr_str += str(self.w)
-        repr_str += ","
-        repr_str += str(self.h)
-        repr_str += "]"
+        repr_str = "[{}, {}]".format(self.w, self.h)
         return repr_str
     
     def is_accommodated(self, ems):
@@ -44,14 +39,14 @@ class Job():
                 results.append([True, o, min(ems.W - tmp_w, ems.H - tmp_h), ems.id])
         
         # 篩選 選取最佳擺放方式與結果
-        print(results)
+        #print(results)
         true_results = [res for res in results if res[0] == True]
-        print("true_results: ", true_results)
+        #print("true_results: ", true_results)
         if len(true_results) == 0:
             return [False, -1, -1, -1]
         else:
             true_results = sorted(true_results, key = lambda s: s[2])
-            print("sorted true_results: ", true_results)
+            #print("sorted true_results: ", true_results)
             return true_results[0]
     
     def putInChoosedEMSAndUpdateSolution(self, choosed_ems, final_placement, solution):
@@ -72,7 +67,7 @@ class Job():
         self.x1, self.y1 = choosed_ems.x1, choosed_ems.y1
         self.x2, self.y2 = choosed_ems.x1 + tmp_w, choosed_ems.y1 + tmp_h
         self.batch_no = choosed_ems.batch_no
-        print("更新 job_id : {} 內建資訊".format(self.no))
+        print("更新 job_id : {} 物件資訊 ---> 放置於 batch_no : {} 擺放座標為 ({}, {}), ({}, {})".format(self.no, self.batch_no, self.x1, self.y1, self.x2, self.y2))
         return solution, self
 
 class EMS():
@@ -120,7 +115,7 @@ def largest_area_sort(job_dict):
     for key, item in job_dict.items():
         area_list.append(item.w*item.h)
 
-    print("area_list: ", area_list)
+    #print("area_list: ", area_list)
     job_sequence = sorted(range(len(area_list)), key=lambda k: area_list[k], reverse=True) # 由大到小排列
     return job_sequence
 
@@ -215,11 +210,12 @@ def BFF_Heuristic(jobNo_sequence, data):
     Best First Fit(BFF) Bin Packing Heuristic
     逐一搜尋所有可放進的ems，並選擇放入剩餘邊長最小者: 旋轉過後 min(W-w, H-h)
     """
+    print("=== 開始BFF擺放 ===")
     # Initialize
     jobNo_sequence_list = jobNo_sequence.copy()
     B_EMSs = {}     # open batches records remain EMSs by list {batch_no : [ems1, ems2, ...]}
     solution = []   # solution : [job_no, batch_no, orientation, x1, y1, x2, y2]
-
+    jobResults = {} # { job_no : job object}
     ## 初始化第一包的ems
     batch_no = 0
     WBIN, HBIN = data.instanceDict["HBIN,WBIN"][1], data.instanceDict["HBIN,WBIN"][0]
@@ -228,10 +224,10 @@ def BFF_Heuristic(jobNo_sequence, data):
     # 遍歷處理所有jobs
     for job_no in jobNo_sequence_list:
 
-        # get job object
-        job = data.instanceDict['JOBS'][job_no]
+        # get job object (copy)
+        job = copy.deepcopy(data.instanceDict['JOBS'][job_no])
 
-        # find best ems can contain the job
+        # find best ems can contain this job (only store for this job)
         BatchNo_results = {}
 
         for b_no, EMSs in B_EMSs.items():
@@ -271,9 +267,14 @@ def BFF_Heuristic(jobNo_sequence, data):
 
         # Place job into choosed ems and Update solution
         solution, job = job.putInChoosedEMSAndUpdateSolution(choosed_ems, final_placement, solution)
-        data.instanceDict['JOBS'][job_no] = job
+        jobResults[job_no] = job
 
         # Update(Merge) EMSs in choosed batch(bin)
         B_EMSs = updateEMSs(job, choosed_ems.batch_no, B_EMSs)
+    print("=== 擺放演算完成 ===")
+    return solution, B_EMSs, jobResults, batch_no
 
-    return solution, B_EMSs, data
+def evaluate_fitnesses(job_total_area, max_opened_batch_no, bin_area):
+    'return a list = [ residual_area, max_opened_batch_no]'
+    num_used_bin = max_opened_batch_no + 1
+    return [(num_used_bin*bin_area) - job_total_area, num_used_bin]

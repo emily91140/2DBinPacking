@@ -5,9 +5,10 @@ from src.BinPack import *
 class DataProcess():
     def __init__(self, config_path):
         self.config = self.LoadConfig(config_path)
-        self.instanceDict = self.LoadInstance(self.config['instance_filename'])
-
-
+        self.instanceDict, self.job_total_area = self.LoadInstance(self.config['instance_filename'])
+        self.WBIN = self.instanceDict['HBIN,WBIN'][1]
+        self.HBIN = self.instanceDict['HBIN,WBIN'][0]
+        self.BIN_AREA = self.WBIN*self.HBIN
 
     def LoadConfig(self, path):
         '讀取config檔案'
@@ -31,6 +32,7 @@ class DataProcess():
         instanceDict = {}
         job_dict = {} # {job_no: [h_i, w_i]}, i = 1...N
         dir = 'instances/'
+        job_total_area = 0
         with open(dir + instance_filename, "r") as f:
             line_no = 1     # 讀取列編號
             job_no = 0      # job 編號
@@ -43,6 +45,7 @@ class DataProcess():
                 else:
                     # job 列表 存入job物件
                     job = Job(job_no, tmp[0], tmp[1])
+                    job_total_area += (tmp[0]*tmp[1])
                     job_dict[job_no] = job
                     job_no += 1
                 
@@ -50,5 +53,5 @@ class DataProcess():
                 line_no += 1
             # 最後將job_dict 存入instanceDict
             instanceDict['JOBS'] = job_dict
-
-            return instanceDict
+            
+            return instanceDict, job_total_area
