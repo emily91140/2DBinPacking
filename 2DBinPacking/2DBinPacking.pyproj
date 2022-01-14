@@ -31,6 +31,9 @@
     <Compile Include="src\DataProcess.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="src\plot.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="instances\" />

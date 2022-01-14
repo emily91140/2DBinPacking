@@ -1,4 +1,4 @@
-
+import math
 from src.BinPack import *
 
 class DataProcess():
@@ -9,6 +9,8 @@ class DataProcess():
         self.WBIN = self.instanceDict['HBIN,WBIN'][1]
         self.HBIN = self.instanceDict['HBIN,WBIN'][0]
         self.BIN_AREA = self.WBIN*self.HBIN
+        self.used_bin_LB = math.ceil(self.job_total_area/self.BIN_AREA)
+        self.residual_area_LB = (self.BIN_AREA*self.used_bin_LB) - self.job_total_area
 
     def LoadConfig(self, path):
         '讀取config檔案'

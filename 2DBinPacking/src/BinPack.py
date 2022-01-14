@@ -19,6 +19,7 @@ class Job():
     
     def is_accommodated(self, ems):
         """
+        *此處可改良選取ems的評估指標
         judge whether ems can contain job(object) with returning the place result'
         :param param1: ems(object) which want to put job in
         :type param1: BinPack.EMS object
@@ -36,7 +37,9 @@ class Job():
             if ems.W - tmp_w < 0 or ems.H - tmp_h < 0:
                 results.append([False, -1, -1, -1])
             else:
-                results.append([True, o, min(ems.W - tmp_w, ems.H - tmp_h), ems.id])
+                # judge_value 評估指標 : 放入後剩餘的最短邊
+                judge_value = min(ems.W - tmp_w, ems.H - tmp_h)
+                results.append([True, o, judge_value, ems.id])
         
         # 篩選 選取最佳擺放方式與結果
         true_results = [res for res in results if res[0] == True]
@@ -69,10 +72,8 @@ class Job():
         return solution, self
 
 class EMS():
-    
     # initialise class variable
     counter = 0
-
     def __init__(self, x1, y1, x2, y2, batch_no):
         self.x1 = x1 # bottom left corner x
         self.y1 = y1 # bottom left corner y
@@ -206,60 +207,62 @@ def BFF_Heuristic(jobNo_sequence, data, print_step = False):
     """
     Best First Fit(BFF) Bin Packing Heuristic
     逐一搜尋所有可放進的ems，並選擇放入剩餘邊長最小者: 旋轉過後 min(W-w, H-h)
+    
+    returns:
+    # solution      = [job_no, batch_no, orientation, x1, y1, x2, y2]
+    # B_EMSs        = { batch_no : ems_object}
+    # jobResults    = { job_no : job_object (filled information with coordinate) }
     """
     if print_step:
         print("=== 開始BFF擺放 ===")
     # Initialize
     jobNo_sequence_list = jobNo_sequence.copy()
-    B_EMSs = {}     # open batches records remain EMSs by list {batch_no : [ems1, ems2, ...]}
     solution = []   # solution : [job_no, batch_no, orientation, x1, y1, x2, y2]
+    B_EMSs = {}     # open batches records remain EMSs by list {batch_no : [ems1, ems2, ...]}
     jobResults = {} # { job_no : job object}
     ## 初始化第一包的ems
     batch_no = 0
-    WBIN, HBIN = data.instanceDict["HBIN,WBIN"][1], data.instanceDict["HBIN,WBIN"][0]
+    WBIN, HBIN = data.WBIN, data.HBIN
     B_EMSs[batch_no] = [EMS(0, 0, WBIN, HBIN, batch_no)]
 
     # 遍歷處理所有jobs
     for job_no in jobNo_sequence_list:
-
         # get job object (copy)
         job = copy.deepcopy(data.instanceDict['JOBS'][job_no])
 
         # find best ems can contain this job (only store for this job)
-        BatchNo_results = {}
-
+        tmp_BatchNo_results = {}
         for b_no, EMSs in B_EMSs.items():
-            results = [] # 儲存當下batch的所有結果
+            tmp_results = [] # 儲存此batch內所有擺放結果
             for ems in EMSs:
+                # 此處可改良選取ems的評估指標
+                # is_accommodated() 計算job放下去後的結果  res[2] = judge_value (job放入後的剩餘最短邊)
                 res = job.is_accommodated(ems)
-                results.append(res) # 記錄當下batch之每個ems的擺放結果
-            
-            BatchNo_results[b_no] = results.copy()
-            results.clear()
+                tmp_results.append(res) # 記錄當下batch之每個ems的擺放結果
+            # 儲存此batch內所有擺放結果
+            tmp_BatchNo_results[b_no] = tmp_results.copy()
+            tmp_results.clear()
         
-        # check whether can put job in exisiting Bin(Batch)
+        # decide which Batch is the best choice
+        # check whether can put job in exisiting Batch(Bin)
         # if not, create a new bin
-        final_placement = []
-        true_result = []
-        for b_no, results in BatchNo_results.items():
-            for res in results:
-                if res[0]:
-                    true_result.append(res)
-        #true_result = [res for res in results for b_no, results in BatchNo_results.items() if res[0] == True]
-        if len(true_result) != 0:
-            # 若有多個可放置的ems 選擇 min_value最小者
-            true_result = sorted(true_result, key = lambda s: s[2])
-            final_placement = true_result[0] # [True, 0, 15, ems_object_id]
+        final_placement = [] # 最終擺放結果
+        true_placements = [res for b_no, results in tmp_BatchNo_results.items() for res in results if res[0] == True] # 將可擺放的ems 提取成true_placements list # 注意:list comprehension範圍應從大寫到小
+        if len(true_placements) != 0:
+            # 若有多個可放置的ems 依照min_value由小排到大 s[2] = judge_value
+            true_placements = sorted(true_placements, key = lambda s: s[2])
+            # 選擇 min_value 最小者(第一個)
+            final_placement = true_placements[0] # [True, 0, 15, ems_object_id]
 
         else:
-            # create new bin and place in it
+            # create new bin and set it to be final_placement
             batch_no +=1
             B_EMSs[batch_no] = [EMS(0, 0, WBIN, HBIN, batch_no)]
             res = job.is_accommodated(B_EMSs[batch_no][0])
             final_placement = res # [True, 0, 15, ems_object_id]
 
 
-        # Get choosed ems
+        # Get choosed ems's information
         choosed_ems_id = final_placement[3]
         choosed_ems = getEMSById(B_EMSs, choosed_ems_id)
 
@@ -273,7 +276,7 @@ def BFF_Heuristic(jobNo_sequence, data, print_step = False):
         print("=== 擺放演算完成 ===")
     return solution, B_EMSs, jobResults, batch_no
 
-def evaluate_fitnesses(job_total_area, max_opened_batch_no, bin_area):
-    'return a list = [ residual_area, max_opened_batch_no]'
+def evaluate_fitness(job_total_area, max_opened_batch_no, bin_area):
+    'return a list = [ residual_area, num_used_bin]'
     num_used_bin = max_opened_batch_no + 1
     return [(num_used_bin*bin_area) - job_total_area, num_used_bin]

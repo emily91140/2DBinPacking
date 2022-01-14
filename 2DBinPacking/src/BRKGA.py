@@ -7,6 +7,8 @@ from src.BinPack import *
 class BRKGA():
     def __init__(self, data, num_generations = 200, p = 100, num_elites = 100*0.25, num_mutants = 100*0.1, elite_inheritance_prob = 0.8):
         self.data = copy.deepcopy(data) # 排程輸入資料
+        self.used_bin_LB = self.data.used_bin_LB
+        self.residual_area_LB = self.data.residual_area_LB
 
         # Configuration
         self.num_generations = num_generations # num of generation
@@ -31,7 +33,7 @@ class BRKGA():
         # BFF演算法擺放 回傳solution
         solution, B_EMSs, jobResults, max_opened_batch_no = BFF_Heuristic(job_sequence, self.data)
         # 針對BFF結果( 回傳 list = [ 剩餘空間, 使用bin數 ] )
-        fitness = evaluate_fitnesses(self.data.job_total_area, max_opened_batch_no, self.data.BIN_AREA)
+        fitness = evaluate_fitness(self.data.job_total_area, max_opened_batch_no, self.data.BIN_AREA)
 
         ## solution = [job_no, batch_no, orientation, x1, y1, x2, y2]
         ## B_EMSs = { batch_no : ems_object}
@@ -46,9 +48,9 @@ class BRKGA():
             # BFF演算法擺放 回傳solution
             solution, B_EMSs, jobResults, max_opened_batch_no = BFF_Heuristic(job_sequence, self.data)
             # 針對BFF結果( 回傳 list = [ 剩餘空間, 使用bin數 ] )
-            fitness = evaluate_fitnesses(self.data.job_total_area, max_opened_batch_no, self.data.BIN_AREA)
-            # fitness value = 剩餘空間
-            fitness_list.append(fitness[0])
+            fitness = evaluate_fitness(self.data.job_total_area, max_opened_batch_no, self.data.BIN_AREA)
+            # fitness value  [0] : 剩餘空間, [1] : 使用bin數
+            fitness_list.append(fitness[1])
         
         fitness_list = np.array(fitness_list).reshape((len(population), 1))
         return fitness_list
@@ -123,6 +125,7 @@ class BRKGA():
         #self.used_bins = math.floor(best_fitness)
         self.best_fitness = best_fitness
         self.solution, self.B_EMSs, self.jobResults, self.used_bin = self.getBestSolution(best_gene)
+        
         # return 'feasible'
         return "feasible"
 
