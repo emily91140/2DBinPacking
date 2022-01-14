@@ -1,11 +1,11 @@
 
-
 from src.BinPack import *
 
 class DataProcess():
     def __init__(self, config_path):
         self.config = self.LoadConfig(config_path)
         self.instanceDict, self.job_total_area = self.LoadInstance(self.config['instance_filename'])
+        self.num_jobs = len(self.instanceDict['JOBS'])
         self.WBIN = self.instanceDict['HBIN,WBIN'][1]
         self.HBIN = self.instanceDict['HBIN,WBIN'][0]
         self.BIN_AREA = self.WBIN*self.HBIN

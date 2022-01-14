@@ -39,17 +39,14 @@ class Job():
                 results.append([True, o, min(ems.W - tmp_w, ems.H - tmp_h), ems.id])
         
         # 篩選 選取最佳擺放方式與結果
-        #print(results)
         true_results = [res for res in results if res[0] == True]
-        #print("true_results: ", true_results)
         if len(true_results) == 0:
             return [False, -1, -1, -1]
         else:
             true_results = sorted(true_results, key = lambda s: s[2])
-            #print("sorted true_results: ", true_results)
             return true_results[0]
     
-    def putInChoosedEMSAndUpdateSolution(self, choosed_ems, final_placement, solution):
+    def putInChoosedEMSAndUpdateSolution(self, choosed_ems, final_placement, solution, print_step = False):
         """
         append new placement to solution
         :param param1: final_placement = ['is_accommodated?', 'orientation', 'min_value', ems_id]
@@ -67,7 +64,8 @@ class Job():
         self.x1, self.y1 = choosed_ems.x1, choosed_ems.y1
         self.x2, self.y2 = choosed_ems.x1 + tmp_w, choosed_ems.y1 + tmp_h
         self.batch_no = choosed_ems.batch_no
-        print("更新 job_id : {} 物件資訊 ---> 放置於 batch_no : {} 擺放座標為 ({}, {}), ({}, {})".format(self.no, self.batch_no, self.x1, self.y1, self.x2, self.y2))
+        if print_step:
+            print("更新 job_id : {} 物件資訊 ---> 放置於 batch_no : {} 擺放座標為 ({}, {}), ({}, {})".format(self.no, self.batch_no, self.x1, self.y1, self.x2, self.y2))
         return solution, self
 
 class EMS():
@@ -115,7 +113,6 @@ def largest_area_sort(job_dict):
     for key, item in job_dict.items():
         area_list.append(item.w*item.h)
 
-    #print("area_list: ", area_list)
     job_sequence = sorted(range(len(area_list)), key=lambda k: area_list[k], reverse=True) # 由大到小排列
     return job_sequence
 
@@ -157,7 +154,11 @@ def is_inscribed(new_ems, another_ems):
     return False
 
 def is_selfelimination(new_ems):
+    # 一直線
     if (new_ems.x1 == new_ems.x2) or (new_ems.y1 == new_ems.y2):
+        return True
+    # 不合理解 (x2,y2) 位於 (x1,y1) 左或下
+    if (new_ems.x2 < new_ems.x1) or (new_ems.y2 < new_ems.y1):
         return True
     return False
 
@@ -174,17 +175,14 @@ def updateEMSs(job, batch_no, exisiting_ems):
     
     EMSs = exisiting_ems[batch_no].copy()
     result_EMSs = EMSs.copy()
-
     for ems in EMSs.copy():
         
         # 檢查現存ems是否跟job疊到
         if is_overlap(job, ems):
             # 刪除此ems 更新exisiting_ems
             result_EMSs = deleteEMSById(result_EMSs, ems.id)
-        
             # 新增4個新的ems
             new_EMSs = generateNewEMS(job, ems)
-
             # 檢查新的ems 是否合理 是則加入result_EMSs
             for new_ems in new_EMSs:
                 isValid = True
@@ -199,18 +197,18 @@ def updateEMSs(job, batch_no, exisiting_ems):
                 # 加入result_EMSs
                 if isValid:
                     result_EMSs.append(new_ems)
-    
     # 依照ems大小排序過後 更新B_EMSs資料結構
     result_EMSs = sortEMSsByArea(result_EMSs)
     exisiting_ems[batch_no] = result_EMSs.copy()
     return exisiting_ems
 
-def BFF_Heuristic(jobNo_sequence, data):
+def BFF_Heuristic(jobNo_sequence, data, print_step = False):
     """
     Best First Fit(BFF) Bin Packing Heuristic
     逐一搜尋所有可放進的ems，並選擇放入剩餘邊長最小者: 旋轉過後 min(W-w, H-h)
     """
-    print("=== 開始BFF擺放 ===")
+    if print_step:
+        print("=== 開始BFF擺放 ===")
     # Initialize
     jobNo_sequence_list = jobNo_sequence.copy()
     B_EMSs = {}     # open batches records remain EMSs by list {batch_no : [ems1, ems2, ...]}
@@ -266,12 +264,13 @@ def BFF_Heuristic(jobNo_sequence, data):
         choosed_ems = getEMSById(B_EMSs, choosed_ems_id)
 
         # Place job into choosed ems and Update solution
-        solution, job = job.putInChoosedEMSAndUpdateSolution(choosed_ems, final_placement, solution)
+        solution, job = job.putInChoosedEMSAndUpdateSolution(choosed_ems, final_placement, solution, print_step)
         jobResults[job_no] = job
 
         # Update(Merge) EMSs in choosed batch(bin)
         B_EMSs = updateEMSs(job, choosed_ems.batch_no, B_EMSs)
-    print("=== 擺放演算完成 ===")
+    if print_step:
+        print("=== 擺放演算完成 ===")
     return solution, B_EMSs, jobResults, batch_no
 
 def evaluate_fitnesses(job_total_area, max_opened_batch_no, bin_area):
