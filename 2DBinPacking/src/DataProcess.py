@@ -44,10 +44,14 @@ class DataProcess():
                     instanceDict[titleDict[line_no]] = tmp
                 else:
                     # job 列表 存入job物件
-                    job = Job(job_no, tmp[0], tmp[1])
-                    job_total_area += (tmp[0]*tmp[1])
-                    job_dict[job_no] = job
-                    job_no += 1
+                    if max(tmp[0], tmp[1]) > max(instanceDict["HBIN,WBIN"][0], instanceDict["HBIN,WBIN"][0]):
+                        # 例外處理 : 若 job 任一邊長 > Bin , 屬於不合理的Job 不會加入Job列表
+                        print("Job大小不合理，請確認輸入資料 {}".format(self.config['instance_filename']))
+                    else:
+                        job = Job(job_no, tmp[0], tmp[1])
+                        job_total_area += (tmp[0]*tmp[1])
+                        job_dict[job_no] = job
+                        job_no += 1
                 
                 # 更新line_no
                 line_no += 1
